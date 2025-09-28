@@ -1930,6 +1930,7 @@ function CargoPodHandlerOnTick()
                     storage.cargo_pods[index] = nil
                     return
                 end
+            end
         end
     end
 end
