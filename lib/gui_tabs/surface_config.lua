@@ -194,8 +194,8 @@ function CreateItemsSection(container, surface_name, header, setting_name, max_c
     }
 
     --Add headers
-    AddLabel(table, nil, "Item", my_label_style)
-    AddLabel(table, nil, "Count", my_label_style)
+    AddLabel(table, nil, { "oarc-add-item-item" }, my_label_style)
+    AddLabel(table, nil, { "oarc-add-item-count" }, my_label_style)
     AddLabel(table, nil, "", my_label_style)
 
     for item_name, item_count in pairs(items) do
@@ -391,9 +391,9 @@ function CreateSolidResourcesConfig(container, surface_name)
     }
 
     --Add headers
-    AddLabel(table, nil, "Type", my_label_style)
-    AddLabel(table, nil, "Amount", my_label_style)
-    AddLabel(table, nil, "Size", my_label_style)
+    AddLabel(table, nil, { "oarc-solid-type" }, my_label_style)
+    AddLabel(table, nil, { "oarc-solid-amount" }, my_label_style)
+    AddLabel(table, nil, { "oarc-solid-size" }, my_label_style)
     AddLabel(table, nil, "", my_label_style)
 
     for resource_name, resource_data in pairs(solid_resources) do
