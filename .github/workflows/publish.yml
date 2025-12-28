@@ -11,8 +11,69 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish Mod
-        uses: shanemadden/factorio-mod-portal-publish@stable
-        env:
-          FACTORIO_USER: ${{ secrets.FACTORIO_USER }}
-          FACTORIO_PASSWORD: ${{ secrets.FACTORIO_PASSWORD }}
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Get mod name from info.json
+        id: mod
+        run: echo "NAME=$(jq -r '.name' info.json)" >> $GITHUB_OUTPUT
+
+      - name: Update version in info.json
+        run: |
+          jq '.version = "${{ steps.version.outputs.VERSION }}"' info.json > info.json.tmp
+          mv info.json.tmp info.json
+          echo "Updated info.json:"
+          cat info.json
+
+      - name: Create mod package
+        run: |
+          MOD_NAME="${{ steps.mod.outputs.NAME }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          PACKAGE_NAME="${MOD_NAME}_${VERSION}"
+          mkdir -p "$PACKAGE_NAME"
+          # Copy all files except git and CI files
+          rsync -av --exclude='.git' --exclude='.github' --exclude='.gitignore' --exclude='.gitattributes' \
+                    --exclude='AGENTS.md' --exclude='CLAUDE.md' --exclude='tasks.md' --exclude='ci-guide.yaml' \
+                    --exclude='devplan.txt' . "$PACKAGE_NAME/"
+          zip -r "${PACKAGE_NAME}.zip" "$PACKAGE_NAME"
+          echo "PACKAGE_PATH=${PACKAGE_NAME}.zip" >> $GITHUB_ENV
+          echo "Created package: ${PACKAGE_NAME}.zip"
+          unzip -l "${PACKAGE_NAME}.zip" | head -30
+
+      - name: Upload to Factorio Mod Portal
+        run: |
+          MOD_NAME="${{ steps.mod.outputs.NAME }}"
+
+          # Step 1: Init upload
+          echo "Initializing upload for mod: $MOD_NAME"
+          INIT_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.FACTORIO_API_KEY }}" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "mod=$MOD_NAME" \
+            "https://mods.factorio.com/api/v2/mods/releases/init_upload")
+
+          echo "Init response: $INIT_RESPONSE"
+
+          UPLOAD_URL=$(echo "$INIT_RESPONSE" | jq -r '.upload_url')
+          if [ "$UPLOAD_URL" == "null" ] || [ -z "$UPLOAD_URL" ]; then
+            echo "Error: Failed to get upload URL"
+            echo "$INIT_RESPONSE" | jq .
+            exit 1
+          fi
+
+          # Step 2: Upload the file
+          echo "Uploading to: $UPLOAD_URL"
+          UPLOAD_RESPONSE=$(curl -s -X POST \
+            -F "file=@${{ env.PACKAGE_PATH }}" \
+            "$UPLOAD_URL")
+
+          echo "Upload response: $UPLOAD_RESPONSE"
+
+          # Check for success
+          if echo "$UPLOAD_RESPONSE" | jq -e '.success' > /dev/null 2>&1; then
+            echo "Successfully published $MOD_NAME version ${{ steps.version.outputs.VERSION }}"
+          else
+            echo "Upload may have failed, check response above"
+            exit 1
+          fi
