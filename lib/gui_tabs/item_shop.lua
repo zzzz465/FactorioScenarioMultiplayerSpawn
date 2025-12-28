@@ -7,25 +7,25 @@
 function CreateItemShopTab(tab_container, player)
 
     if (player.character == nil) then
-        AddLabel(tab_container, nil, "Player character not available right now.", my_warning_style)
+        AddLabel(tab_container, nil, { "oarc-coins-character-invalid" }, my_warning_style)
         return
     end
 
     local player_inv = player.character.get_main_inventory()
     if (player_inv == nil) then
-        AddLabel(tab_container, nil, "Player main inventory not available right now.", my_warning_style)
+        AddLabel(tab_container, nil, { "oarc-coins-character-main-inventory-invalid" }, my_warning_style)
         return
     end
 
     local wallet = player_inv.get_item_count("coin")
     AddLabel(tab_container,
         "player_store_wallet_lbl",
-        "Coins Available: " .. wallet .. "  [item=coin]",
+        { "oarc-coins-available", wallet },
         {top_margin=5, bottom_margin=5})
-    AddLabel(tab_container, "coin_info", "Players start with some coins. Earn more coins by killing enemies.", my_note_style)
-    AddLabel(tab_container, nil, "Locked items become available after playing for awhile...", my_note_style)
+    AddLabel(tab_container, "coin_info", { "oarc-coins-info" }, my_note_style)
+    AddLabel(tab_container, nil, { "oarc-coins-info-locked" }, my_note_style)
     if (player.admin) then
-        AddLabel(tab_container, nil,  "Currently, the item list can only be edited via custom scenario or by directly setting the storage.ocfg.shop_items table.", my_note_style)
+        AddLabel(tab_container, nil, { "oarc-coins-info-admin" }, my_note_style)
     end
 
     local line = tab_container.add{type="line", direction="horizontal"}
@@ -47,13 +47,13 @@ function CreateItemShopTab(tab_container, player)
                 color = "[color=red]"
             end
             local btn = flow.add{
-                name=item_name,
-                type="sprite-button",
-                number=item.count,
-                sprite="item/"..item_name,
-                tooltip=item_name .. " Cost: "..color..item.cost.."[/color] [item=coin]",
-                -- style=mod_gui.button_style,
-                style="slot_button",
+                name = item_name,
+                type = "sprite-button",
+                number = item.count,
+                sprite = "item/"..item_name,
+                tooltip = { "oarc-coins-item-tooltip", item_name, color, item.cost },
+                -- style = mod_gui.button_style,
+                style = "slot_button",
                 tags = {
                     action = "store_item",
                     item = item_name,

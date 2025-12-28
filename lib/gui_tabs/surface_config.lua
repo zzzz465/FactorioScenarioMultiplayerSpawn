@@ -194,8 +194,8 @@ function CreateItemsSection(container, surface_name, header, setting_name, max_c
     }
 
     --Add headers
-    AddLabel(table, nil, "Item", my_label_style)
-    AddLabel(table, nil, "Count", my_label_style)
+    AddLabel(table, nil, { "oarc-add-item-item" }, my_label_style)
+    AddLabel(table, nil, { "oarc-add-item-count" }, my_label_style)
     AddLabel(table, nil, "", my_label_style)
 
     for item_name, item_count in pairs(items) do
@@ -391,9 +391,9 @@ function CreateSolidResourcesConfig(container, surface_name)
     }
 
     --Add headers
-    AddLabel(table, nil, "Type", my_label_style)
-    AddLabel(table, nil, "Amount", my_label_style)
-    AddLabel(table, nil, "Size", my_label_style)
+    AddLabel(table, nil, { "oarc-solid-type" }, my_label_style)
+    AddLabel(table, nil, { "oarc-solid-amount" }, my_label_style)
+    AddLabel(table, nil, { "oarc-solid-size" }, my_label_style)
     AddLabel(table, nil, "", my_label_style)
 
     for resource_name, resource_data in pairs(solid_resources) do
@@ -733,7 +733,7 @@ function SurfaceConfigTabGuiConfirmed(event)
 
         -- Check if an item is selected first.
         if (tags.item_name == "") then
-            SendErrorMsg(player, "Please select an item first!")
+            SendErrorMsg(player, { "oarc-add-item-not-selected" })
             event.element.text = "0"
             return
         end
@@ -754,7 +754,7 @@ function SurfaceConfigTabGuiConfirmed(event)
 
         -- Check if an item is selected first.
         if (tags.resource_name == "") then
-            SendErrorMsg(player, "Please select a resource first!")
+            SendErrorMsg(player, { "oarc-add-resource-not-selected" })
             event.element.text = "0"
             return
         end
@@ -780,7 +780,7 @@ function SurfaceConfigTabGuiConfirmed(event)
 
         -- Check if an item is selected first.
         if (tags.resource_name == "") then
-            SendErrorMsg(player, "Please select a resource first!")
+            SendErrorMsg(player, { "oarc-add-resource-not-selected" })
             event.element.text = "0"
             return
         end
@@ -844,7 +844,7 @@ function SurfaceConfigTabGuiElemChanged(event)
         local setting_name = parent.tags.setting --[[@as string]]
 
         if (storage.ocfg.surfaces_config[surface_name].starting_items[setting_name][new_item_name]) then
-            SendErrorMsg(player, "Item already exists in list! " .. new_item_name)
+            SendErrorMsg(player, { "oarc-add-item-exist", new_item_name })
             event.element.elem_value = nil
             return
         end
@@ -874,7 +874,7 @@ function SurfaceConfigTabGuiElemChanged(event)
         end
 
         if (prototypes.entity[new_resource_name].resource_category ~= "basic-solid") then
-            SendErrorMsg(player, "Resource must be a solid resource! " .. new_resource_name)
+            SendErrorMsg(player, { "oarc-add-resource-not-solid", new_resource_name })
             event.element.elem_value = nil
             return
         end
@@ -892,7 +892,7 @@ function SurfaceConfigTabGuiElemChanged(event)
         local setting_name = parent.tags.setting --[[@as string]]
 
         if (storage.ocfg.surfaces_config[surface_name].spawn_config[setting_name][new_resource_name]) then
-            SendErrorMsg(player, "Resource already exists in list! " .. new_resource_name)
+            SendErrorMsg(player, { "oarc-add-resource-exist", new_resource_name })
             event.element.elem_value = nil
             return
         end
@@ -922,7 +922,7 @@ function SurfaceConfigTabGuiElemChanged(event)
         end
 
         if (prototypes.entity[new_resource_name].resource_category ~= "basic-fluid") then
-            SendErrorMsg(player, "Resource must be a fluid resource! " .. new_resource_name)
+            SendErrorMsg(player, { "oarc-add-resource-not-fluid", new_resource_name })
             event.element.elem_value = nil
             return
         end
@@ -940,7 +940,7 @@ function SurfaceConfigTabGuiElemChanged(event)
         local setting_name = parent.tags.setting --[[@as string]]
 
         if (storage.ocfg.surfaces_config[surface_name].spawn_config[setting_name][new_resource_name]) then
-            SendErrorMsg(player, "Resource already exists in list! " .. new_resource_name)
+            SendErrorMsg(player, { "oarc-add-resource-exist", new_resource_name })
             event.element.elem_value = nil
             return
         end
@@ -1047,11 +1047,11 @@ function SurfaceConfigTabGuiClick(event)
         local surface_name = event.element.parent["surface_dropdown"].items[event.element.parent["surface_dropdown"].selected_index] --[[@as string]]
 
         if (surface_name == "nauvis") then
-            SendErrorMsg(player, "Already on nauvis, select a different surface to copy nauvis settings to!")
+            SendErrorMsg(player, { "oarc-copy-nauvis-invalid" })
             return
         end
 
-        CompatSend(player, "Copy nauvis to " .. surface_name)
+        CompatSend(player, { "oarc-copied", surface_name })
         storage.ocfg.surfaces_config[surface_name].starting_items = storage.ocfg.surfaces_config["nauvis"].starting_items
         storage.ocfg.surfaces_config[surface_name].spawn_config = storage.ocfg.surfaces_config["nauvis"].spawn_config
 
