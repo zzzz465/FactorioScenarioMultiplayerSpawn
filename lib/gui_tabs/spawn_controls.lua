@@ -421,7 +421,7 @@ function SpawnCtrlTabGuiClick(event)
         -- Check if the surface is blacklisted
         local surface_name = player.character.surface.name
         if IsSurfaceBlacklisted(surface_name) then
-            SendErrorMsg(player, {"oarc-no-respawn-this-surface"})
+            SendErrorMsg(player, { "oarc-no-respawn-this-surface" })
             return
         end
 

@@ -151,7 +151,7 @@ function CreateSurfaceSelectDropdown(parent_flow)
         end
     end
 
-    AddLabel(surfacesHorizontalFlow, "surfacesHorizontalFlowLabel", "Select Surface: ", my_label_style)
+    AddLabel(surfacesHorizontalFlow, "surfacesHorizontalFlowLabel", { "oarc-surface-select" }, my_label_style)
     surfacesHorizontalFlow.add {
         name = "surface_select_dropdown",
         tags = { action = "oarc_spawn_options", setting = "surface_select" },

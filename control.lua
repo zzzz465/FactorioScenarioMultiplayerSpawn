@@ -422,7 +422,7 @@ end,
 script.on_event(defines.events.on_entity_died, function(event)
     if storage.ocfg.gameplay.enable_friendly_teams then return end
     local force = event.entity.force ---@type LuaForce
-    CompatSend(force, "[color=red]Warning:[/color] Your crashed ship was destroyed!")
+    CompatSend(force, { "oarc-crash-site-destroyed" })
 end,
 {{filter = "name", name = "crash-site-spaceship"}})
 

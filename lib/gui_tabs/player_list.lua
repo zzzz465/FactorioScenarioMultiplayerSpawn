@@ -73,7 +73,7 @@ function AddPlayerRow(table, player_name, online)
                     AddLabel(table, nil, game.surfaces[spawn.surface_name].localised_name, my_label_style)
                 end
             else
-                AddLabel(table, nil, "Unknown?", my_label_style) -- Shouldn't happen
+                AddLabel(table, nil, {"oarc-player-list-tab-column-unknown-location"}, my_label_style) -- Shouldn't happen
             end
         end
 
