@@ -1,4 +1,5 @@
 --Adding the "spacing" setting for fluid resources config.
+if (storage == nil) or (storage.ocfg == nil) then return end
 for surface_name, surface_config in pairs(storage.ocfg.surfaces_config) do
     local fluid_resources = surface_config.spawn_config.fluid_resources
     for fluid_name, resource in pairs(fluid_resources) do

@@ -1,4 +1,5 @@
 -- Migrate the force_grass to force_tiles new setting!
+if storage.ocfg == nil then return end
 if storage.ocfg.spawn_general.force_tiles == nil then
     storage.ocfg.spawn_general.force_tiles = true
     log("Updating spawn_general config with new 'force_tiles' setting.")

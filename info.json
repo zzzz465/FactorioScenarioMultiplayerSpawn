@@ -1,12 +1,12 @@
 {
-  "name": "oarc-mod",
-  "version": "2.1.24",
+  "name": "oarc-mod-tmp-fix",
+  "version": "0.2.3",
   "factorio_version": "2.0",
-  "title": "Oarc Multiplayer Spawn",
+  "title": "Oarc Multiplayer Spawn (hotfix fork only)",
   "author": "Oarcinae",
   "contact": "Mod Discussion Page, oarcinae@gmail.com, Discord:oarc",
   "homepage": "https://github.com/Oarcinae/FactorioScenarioMultiplayerSpawn",
-  "description": "[[Description is in locale file!]]",
+  "description": "forked version for applying hotfixes. don't use this",
   "dependencies": [
     "base >= 2.0.17",
     "? space-age",
@@ -19,6 +19,7 @@
     "(?) blueprint-sandboxes",
     "(?) factorissimo-2-notnotmelon",
     "(?) better-chat",
+    "! oarc-mod",
     "! rso-mod"
   ]
 }

@@ -47,11 +47,16 @@ script.on_init(function(event)
     -- If init has already been run, we immediately hard error.
     -- This is NOT supported. Checking for this force is just an easy dumb way to do it.
     if (game.forces[ABANDONED_FORCE_NAME] ~= nil) then
-        error("It appears as though this mod is trying to re-run on_init. If you removed the mod and re-added it again, this is NOT supported. You have to rollback to a previous save where the mod was enabled.")
-        return
+        log("WARNING: Detected attempt to re-run on_init; proceeding with idempotent initialization.")
     end
 
-    ValidateAndLoadConfig()
+    if (storage.ocfg == nil) then
+        ValidateAndLoadConfig()
+    else
+        SetupOCFGModKeys()
+        SyncModSettingsToOCFG()
+        ValidateSettings()
+    end
     RegrowthInit()
 
     InitSpawnGlobalsAndForces()

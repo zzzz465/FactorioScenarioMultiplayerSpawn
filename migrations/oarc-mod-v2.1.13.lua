@@ -5,6 +5,7 @@
 -- If we can detect and redirect cargo-pods, then this can be removed.
 
 -- Regrowth make sure all planet surfaces are initialized first
+if (storage == nil) or (storage.ocfg == nil) then return end
 for _,planet in pairs(game.planets) do
     RegrowthInitSurface(planet.name, storage.ocfg.regrowth.enable_regrowth)
 end

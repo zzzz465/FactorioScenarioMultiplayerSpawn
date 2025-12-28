@@ -1,4 +1,5 @@
 -- For non-supported surfaces, make sure they have the default settings.
+if (storage == nil) or (storage.ocfg == nil) then return end
 if storage.ocfg.surfaces_config["aquilo"].spawn_config.fill_tile == nil then
     storage.ocfg.surfaces_config["aquilo"] = {
         spawn_config = NAUVIS_SPAWN_CONFIG,

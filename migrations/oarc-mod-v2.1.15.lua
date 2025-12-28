@@ -1,4 +1,5 @@
 --Fix missing gleba_resources for the surfaces that I didn't update in 2.1.13.
+if (storage == nil) or (storage.ocfg == nil) then return end
 if (storage.ocfg.surfaces_config["nauvis"].spawn_config.gleba_resources == nil) then
     storage.ocfg.surfaces_config["nauvis"].spawn_config.gleba_resources = {}
     log("Fixing nauvis config with empty gleba_resources entry.")

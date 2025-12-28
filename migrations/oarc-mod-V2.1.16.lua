@@ -1,4 +1,5 @@
 --Fix a missing migration in spawn choices table.
+if (storage == nil) then return end
 for player_name,entry in pairs(storage.spawn_choices) do
     if entry["surface"] ~= nil then
         entry.surface_name = entry["surface"]

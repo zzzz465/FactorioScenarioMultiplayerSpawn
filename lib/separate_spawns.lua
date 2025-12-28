@@ -22,7 +22,7 @@ function InitSpawnGlobalsAndForces()
 
     -- Contains a table of entries for each surface. This tracks which surfaces allow spawning?
     --[[@type table<string, OarcSurfaceSpawnSetting>]]
-    storage.oarc_surfaces = {}
+    storage.oarc_surfaces = storage.oarc_surfaces or {}
     for _, surface in pairs(game.surfaces) do
         SeparateSpawnsInitSurface(surface.name)
     end
@@ -32,49 +32,54 @@ function InitSpawnGlobalsAndForces()
     -- There is a way in game to change this under one of the little menu features I added. This allows players to
     -- change their respawn point to something other than their home base.
     --[[@type OarcPlayerRespawnsTable]]
-    storage.player_respawns = {}
+    storage.player_respawns = storage.player_respawns or {}
 
     -- This is the most important table. It is a list of all the unique spawn points.
     -- This is what chunk generation checks against, and is used for shared spawn tracking, and more.
     ---@type OarcUniqueSpawnsTable
-    storage.unique_spawns = {}
+    storage.unique_spawns = storage.unique_spawns or {}
 
     -- Each player has an option to change their respawn which has a cooldown when used.
     -- Other similar abilities/functions that require cooldowns could be added here.
     --[[@type OarcPlayerCooldownsTable]]
-    storage.player_cooldowns = {}
+    storage.player_cooldowns = storage.player_cooldowns or {}
 
     -- Players who have made a spawn choice get put into this list while waiting.
     -- An on_tick event checks when it expires and then places down the base resources, and teleports the player.
     -- Go look at DelayedSpawnOnTick() for more info.
     --[[@type OarcDelayedSpawnsTable]]
-    storage.delayed_spawns = {}
+    storage.delayed_spawns = storage.delayed_spawns or {}
 
     -- This stores the spawn choices that a player makes from the GUI interactions.
     -- Intended to be re-used for secondary spawns!
     --[[@type OarcSpawnChoicesTable]]
-    storage.spawn_choices = {}
+    storage.spawn_choices = storage.spawn_choices or {}
 
     --- Table contains all the renders that need to be faded out over time in the on_tick event. They are removed when they expire.
     --[[@type table<integer>]]
-    storage.oarc_renders_fadeout = {}
+    storage.oarc_renders_fadeout = storage.oarc_renders_fadeout or {}
 
     -- This is a queue of players that need to be teleported to their spawn point.
     --[[@type table<string, OarcNilCharacterTeleportQueueEntry>]]
-    storage.nil_character_teleport_queue = {}
+    storage.nil_character_teleport_queue = storage.nil_character_teleport_queue or {}
 
     -- Keep track of the landing pads for each surface, for each force so we don't have to keep using find_entities_filtered.
     --[[@type table<string, table<string, table<LuaEntity>>>]]
-    storage.landing_pads = {}
+    storage.landing_pads = storage.landing_pads or {}
 
     -- Special forces for when players with their own force want a reset.
-    game.create_force(ABANDONED_FORCE_NAME)
+    if (game.forces[ABANDONED_FORCE_NAME] == nil) then
+        game.create_force(ABANDONED_FORCE_NAME)
+    end
     -- game.create_force(DESTROYED_FORCE_NAME)
 
     -- Name a new force to be the default force.
     -- This is what any new player is assigned to when they join, even before they spawn.
-    local main_force = CreatePlayerForce(storage.ocfg.gameplay.main_force_name)
-    main_force.set_spawn_position({ x = 0, y = 0 }, storage.ocfg.gameplay.default_surface)
+    local main_force = game.forces[storage.ocfg.gameplay.main_force_name]
+    if (main_force == nil) then
+        main_force = CreatePlayerForce(storage.ocfg.gameplay.main_force_name)
+        main_force.set_spawn_position({ x = 0, y = 0 }, storage.ocfg.gameplay.default_surface)
+    end
 
     CreateHoldingPenPermissionsGroup()
 end
@@ -1839,11 +1844,18 @@ function OnCargoPodFinishedAscending(event)
         storage.cargo_pods = {}
     end
 
+    local cargo_pod = event.cargo_pod
+
+    -- Bail out if another mod removed the pod before we can track it.
+    if (cargo_pod == nil) or (not cargo_pod.valid) then
+        return
+    end
+
     -- Only track pods that are launched from a space platform and do not have a player riding in it!
     if (event.launched_by_rocket == false) and (event.player_index == nil) then
         -- TODO: Check if we can trace the cargo pod to the player who launched it somehow.
         -- TODO: Need to check if the planet surface has a landing pad here too if we can.
-        storage.cargo_pods[event.cargo_pod.unit_number] = event.cargo_pod
+        storage.cargo_pods[cargo_pod.unit_number] = cargo_pod
     end
 end
 
@@ -1853,72 +1865,76 @@ function CargoPodHandlerOnTick()
     if (storage.cargo_pods == nil) then return end
 
     for index, pod in pairs(storage.cargo_pods) do
+        if (pod == nil) or (not pod.valid) then
+            storage.cargo_pods[index] = nil
+        else
 
-        -- Make sure the pod is now descending, which means the surface shouldn't have a platform.
-        -- This will likely break in the future if there is a way to send platform to platform.
-        if (pod.surface.platform == nil) then
-            local surface = pod.surface
-            local force = pod.force
+            -- Make sure the pod is now descending, which means the surface shouldn't have a platform.
+            -- This will likely break in the future if there is a way to send platform to platform.
+            if (pod.surface.platform == nil) then
+                local surface = pod.surface
+                local force = pod.force
 
-            -- Remove any pods that are landing on a surface we don't care about:
-            -- Check if secondary spawns are disabled
-            if (not storage.oarc_surfaces[surface.name] or not storage.oarc_surfaces[surface.name].secondary) then
-                storage.cargo_pods[index] = nil
-                return
-            end
-
-            -- Check if the force has a landing pad on this surface
-            local has_landing_pad = DoesForceHaveLandingPadOnSurface(force, surface)
-            if has_landing_pad then
-                storage.cargo_pods[index] = nil
-                return
-            end
-
-            -- Check if the force is main force and warn that you need to manually retrieve your pods via command.
-            -- TODO: Check if we can trace the cargo pod to the player who launched it somehow.
-            if (force.name == storage.ocfg.gameplay.main_force_name) then
-                CompatSend(force, {"oarc-cargo-pod-main-force-warning"}, { color = force.color })
-                storage.cargo_pods[index] = nil
-                return
-            end
-
-            -- Check if the force has a unique spawn on this surface
-            local unique_spawn = FindUniqueSpawnByForceForSurface(force, surface.name)
-            local has_unique_spawn = (#unique_spawn > 0)
-
-            -- Pod has a spawn it belongs to, send it there.
-            if has_unique_spawn then
-                log("Pod has a unique spawn, need to send it there.")
-                
-                -- Forcefully finish descending and remove the pod from our list.
-                pod.force_finish_descending()
-                storage.cargo_pods[index] = nil
-
-                -- Search for dropped pods and teleport them to the unique spawn.
-                -- If the spawn is still generating, they will be teleported when it is done.
-                if unique_spawn[1].generated then
-                    TeleportCargoPodsToLocation(surface, force, unique_spawn[1].position)
-                end
-                return
-
-            -- Pod will trigger the creation of a new secondary spawn otherwise
-            else
-                -- Find a primary spawn of the force to get the host:
-                local spawn = FindPrimarySpawnForForce(force)
-                if (spawn == nil) then
-                    -- This should never happen in theory...
-                    log("ERROR! No primary spawn found for force: " .. force.name)
+                -- Remove any pods that are landing on a surface we don't care about:
+                -- Check if secondary spawns are disabled
+                if (not storage.oarc_surfaces[surface.name] or not storage.oarc_surfaces[surface.name].secondary) then
                     storage.cargo_pods[index] = nil
                     return
                 end
-
-                log("A landing cargo pod triggered a secondary spawn for force: " .. force.name)
-                SecondarySpawn(game.players[spawn.host_name], surface.name, false)
-
-                -- Any cargo pods will be teleported to the unique spawn when it is finished generating.
-                pod.force_finish_descending()
-                storage.cargo_pods[index] = nil
-                return
+    
+                -- Check if the force has a landing pad on this surface
+                local has_landing_pad = DoesForceHaveLandingPadOnSurface(force, surface)
+                if has_landing_pad then
+                    storage.cargo_pods[index] = nil
+                    return
+                end
+    
+                -- Check if the force is main force and warn that you need to manually retrieve your pods via command.
+                -- TODO: Check if we can trace the cargo pod to the player who launched it somehow.
+                if (force.name == storage.ocfg.gameplay.main_force_name) then
+                    CompatSend(force, {"oarc-cargo-pod-main-force-warning"}, { color = force.color })
+                    storage.cargo_pods[index] = nil
+                    return
+                end
+    
+                -- Check if the force has a unique spawn on this surface
+                local unique_spawn = FindUniqueSpawnByForceForSurface(force, surface.name)
+                local has_unique_spawn = (#unique_spawn > 0)
+    
+                -- Pod has a spawn it belongs to, send it there.
+                if has_unique_spawn then
+                    log("Pod has a unique spawn, need to send it there.")
+                    
+                    -- Forcefully finish descending and remove the pod from our list.
+                    pod.force_finish_descending()
+                    storage.cargo_pods[index] = nil
+    
+                    -- Search for dropped pods and teleport them to the unique spawn.
+                    -- If the spawn is still generating, they will be teleported when it is done.
+                    if unique_spawn[1].generated then
+                        TeleportCargoPodsToLocation(surface, force, unique_spawn[1].position)
+                    end
+                    return
+    
+                -- Pod will trigger the creation of a new secondary spawn otherwise
+                else
+                    -- Find a primary spawn of the force to get the host:
+                    local spawn = FindPrimarySpawnForForce(force)
+                    if (spawn == nil) then
+                        -- This should never happen in theory...
+                        log("ERROR! No primary spawn found for force: " .. force.name)
+                        storage.cargo_pods[index] = nil
+                        return
+                    end
+    
+                    log("A landing cargo pod triggered a secondary spawn for force: " .. force.name)
+                    SecondarySpawn(game.players[spawn.host_name], surface.name, false)
+    
+                    -- Any cargo pods will be teleported to the unique spawn when it is finished generating.
+                    pod.force_finish_descending()
+                    storage.cargo_pods[index] = nil
+                    return
+                end
             end
         end
     end
@@ -1957,7 +1973,7 @@ function CreatePlayerForce(force_name)
     -- Check if force already exists
     if (game.forces[force_name] ~= nil) then
         log("Force already exists!")
-        return CreatePlayerForce(force_name .. "_") -- Append a character to make the force name unique.
+        return game.forces[force_name]
 
         -- Create a new force
     elseif (#game.forces < MAX_FORCES) then

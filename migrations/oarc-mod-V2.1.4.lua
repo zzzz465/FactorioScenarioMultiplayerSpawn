@@ -1,4 +1,5 @@
 --Need to make sure the new config settings are added.
+if (storage == nil) or (storage.ocfg == nil) then return end
 if storage.ocfg.gameplay.enable_friendly_teams == nil then
     storage.ocfg.gameplay.enable_friendly_teams = true
     log("Updating gameplay config with new 'enable_friendly_teams' setting.")

@@ -1,4 +1,5 @@
 -- This is a fix for a bug where a buddy was deleted but still exist in the spawn info.
+if (storage == nil) then return end
 for _,spawns in pairs(storage.unique_spawns) do
     for _,spawn in pairs(spawns) do
         -- If the name is not nil, but the player doesn't exist, nil it out.
