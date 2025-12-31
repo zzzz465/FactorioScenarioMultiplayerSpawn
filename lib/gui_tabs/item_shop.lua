@@ -94,7 +94,9 @@ function OarcItemShopGuiClick(event)
 
         if (player_inv.get_item_count("coin") >= item.cost) then
             player_inv.insert({name = button.name, count = item.count})
-            player_inv.remove({name = "coin", count = item.cost})
+            if (item.cost > 0) then
+                player_inv.remove({name = "coin", count = item.cost})
+            end
 
             if (button.parent and button.parent.parent and button.parent.parent.player_store_wallet_lbl) then
                 local wallet = player_inv.get_item_count("coin")
